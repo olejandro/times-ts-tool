@@ -24,127 +24,115 @@ library(arules)
 
 categorise_ts <- function(aggr_data, year, timezone = "UTC", hour_by_type = FALSE){
 
-#year <- 2011
-#timezone <- "UTC"
+  #read criterias used to define time slices
+  brk_lvls <- read.csv('input/breaks-season.csv', stringsAsFactors = FALSE, encoding="UTF-8")
 
-#read time series data
-#ts_data <- read.csv('input/time_series.csv')
+  #definition of seasons
+  sbm <- read.csv('input/dict/month-season.csv', stringsAsFactors = FALSE, encoding="UTF-8")
 
-#read time series data used to define time slices
-#aggr_data <- read.csv('input/aggr_data.csv')
+  #definition of days
+  dbt <- read.csv('input/dict/day-type.csv', stringsAsFactors = FALSE, encoding="UTF-8")
 
-#read criterias used to define time slices
-brk_lvls <- read.csv('input/breaks-season.csv', stringsAsFactors = FALSE, encoding="UTF-8")
+  #Read a csv file with holidays
+  holidays <- read.csv('input/dict/holidays.csv', stringsAsFactors = FALSE, encoding="UTF-8")
 
-#definition of seasons
-sbm <- read.csv('input/dict/month-season.csv', stringsAsFactors = FALSE, encoding="UTF-8")
+  #Definition of hours by level
+  hbl <- read.csv('input/dict/hour-map.csv', stringsAsFactors = FALSE, encoding="UTF-8")
+  labels = c("low","medium","high")
 
-#definition of days
-dbt <- read.csv('input/dict/day-type.csv', stringsAsFactors = FALSE, encoding="UTF-8")
+  #Definition of hours
+  h_order <- read.csv('input/dict/order.csv')
 
-#Read a csv file with holidays
-holidays <- read.csv('input/dict/holidays.csv', stringsAsFactors = FALSE, encoding="UTF-8")
+  #!Due to summer time, starting and ending hours of week-ends would be classified differently
+  #!compared to the original TS tool. Nothing special is done to time shift in Ramses, 
+  #!because all the series are in the same time zone. Therefore UTC is used to avoid the shift.
 
-#Definition of hours by level
-hbl <- read.csv('input/dict/hour-map.csv', stringsAsFactors = FALSE, encoding="UTF-8")
-labels = c("low","medium","high")
+  #create hourly index for the whole year, assuming UTC time zone
+  time_index <- seq(from = as.POSIXct(paste(year,"01-01 00:00",sep="-"), tz=timezone),
+                    to = as.POSIXct(paste(year,"12-31 23:00",sep="-"), tz=timezone), by = "hour")
 
-#Definition of hours
-h_order <- read.csv('input/dict/order.csv')
+  #add hourly index to time series
+  aggr_data <- xts(aggr_data, order.by = time_index)
 
-#!Due to summer time, starting and ending hours of week-ends would be classified differently
-#!compared to the original TS tool. Nothing special is done to time shift in Ramses, 
-#!because all the series are in the same time zone. Therefore UTC is used to avoid the shift.
+  #create a data frame to categorise hours
+  ts_cats <- xts(data.frame(matrix(ncol=3, nrow=length(time_index))),order.by = time_index)
+  colnames(ts_cats) <- c("Season","Day","Hour")
 
-#create hourly index for the whole year, assuming UTC time zone
-time_index <- seq(from = as.POSIXct(paste(year,"01-01 00:00",sep="-"), tz=timezone), 
-                  to = as.POSIXct(paste(year,"12-31 23:00",sep="-"), tz=timezone), by = "hour")
+  #Replace NA with season value
+  for (aMonth in sbm$Month)
+    {
+    index <- which(.indexmon(ts_cats)==aMonth)
+    ts_cats$Season[index] <- sbm[sbm[,"Month"] == aMonth,"Season"]
+    }
 
-#add hourly index to time series
-aggr_data <- xts(aggr_data, order.by = time_index)
-#ts_data <- xts(ts_data, order.by = time_index)
+  #Replace NA with day value
+  for (aDay in dbt$Day)
+    {
+    index <- which(.indexwday(ts_cats)==aDay)
+    ts_cats$Day[index] <- dbt[dbt[,"Day"] == aDay,"Type"]
+    }
 
-#mean.difftime => time internavl creation
+  #Check whether there is inconsistency between Day/Type definition and NW assignment
 
-#create a data frame to categorise hours
-ts_cats <- xts(data.frame(matrix(ncol=3, nrow=length(time_index))),order.by = time_index)
-colnames(ts_cats) <- c("Season","Day","Hour")
+  if("NW" %in% dbt$Type)
+    {
+    NW <- "NW"
+    } else
+      {
+        print("Please specify a consistent label for a holiday!")
+        exit
+        }                                            
 
-#Replace NA with season value
-for (aMonth in sbm$Month)
-{
-  index <- which(.indexmon(ts_cats)==aMonth)
-  ts_cats$Season[index] <- sbm[sbm[,"Month"] == aMonth,"Season"]
-}
-
-#Replace NA with day value
-for (aDay in dbt$Day)
-{
-  index <- which(.indexwday(ts_cats)==aDay)
-  ts_cats$Day[index] <- dbt[dbt[,"Day"] == aDay,"Type"]
-}
-
-#Check whether there is inconsistency between Day/Type definition and NW assignment
-
-if("NW" %in% dbt$Type)
-{
-  NW <- "NW" 
-} else {
-  print("Please specify a consistent label for a holiday!")
-  exit
-  }                                            
-
-#Include holidays as a non-work day
-ts_cats$Day[holidays$Date] <- NW
-
-#Include additional days as non-work days 
-#The day after Kristi himmelfartsdag
-ts_cats$Day[as.character(as.Date(holidays[holidays[,"Holiday"]
+  #Include holidays as a non-work day
+  ts_cats$Day[holidays$Date] <- NW
+  
+  #Include additional days as non-work days
+  #The day after Kristi himmelfartsdag
+  ts_cats$Day[as.character(as.Date(holidays[holidays[,"Holiday"]
                                           == "Kristi himmelfartsdag","Date"])+1)] <- NW
-#23.12-31.12
-ts_cats$Day[paste(paste(year, "12-23", sep = "-"),
+  #23.12-31.12
+  ts_cats$Day[paste(paste(year, "12-23", sep = "-"),
                     paste(year, "12-31", sep = "-"), sep = "/")] <- NW
 
-#calculate means per column
-means <- apply(aggr_data, 2, mean)
+  #calculate means per column
+  means <- apply(aggr_data, 2, mean)
 
-#calculate level intervals
-for (season in unique(brk_lvls$Season))
-{
-  for (i in names(means)) 
-  {
-    brk_lvls[brk_lvls[, "Season"] == season,i] <- 
-      brk_lvls[brk_lvls[, "Season"] == season,i] * means[i]
-  }
-}
+  #calculate level intervals
+  for (season in unique(brk_lvls$Season))
+    {
+    for (i in names(means)) 
+      {
+      brk_lvls[brk_lvls[, "Season"] == season,i] <- 
+        brk_lvls[brk_lvls[, "Season"] == season,i] * means[i]
+      }
+    }
 
-#categorise data points in time series
-#create a dataframe to hold the categories
-ts_levels <- data.frame(matrix(nrow = length(time_index), ncol = ncol(aggr_data)))
-colnames(ts_levels) <- colnames(aggr_data)
-ts_levels <- xts(ts_levels, order.by = time_index)
+  #categorise data points in time series
+  #create a dataframe to hold the categories
+  ts_levels <- data.frame(matrix(nrow = length(time_index), ncol = ncol(aggr_data)))
+  colnames(ts_levels) <- colnames(aggr_data)
+  ts_levels <- xts(ts_levels, order.by = time_index)
 
-#fill in the data frame with categories
-for (serie in colnames(aggr_data)) 
-{
-#  for (season in rownames(means)) 
-  for (season in unique(brk_lvls$Season)) 
-  {
-    ts_levels[ts_cats$Season == season, serie] <- as.character(
-      discretize(aggr_data[ts_cats$Season == season, serie],
-                 breaks=brk_lvls[brk_lvls$Season == season, serie], 
-                         method = "fixed", labels = labels, right = TRUE))
-  }
-}
+  #fill in the data frame with categories
+  for (serie in colnames(aggr_data)) 
+    {
+    for (season in unique(brk_lvls$Season))
+      {
+      ts_levels[ts_cats$Season == season, serie] <- as.character(
+        discretize(aggr_data[ts_cats$Season == season, serie],
+                   breaks=brk_lvls[brk_lvls$Season == season, serie],
+                   method = "fixed", labels = labels, right = TRUE))
+      }
+    }
 
-#Create a dataframe for filling in combinations of criteria for hours (i.e. because of "all")
-hbl_full <- data.frame(matrix(nrow=length(labels)^ncol(hbl[-1])*length(hbl$Hour)
-                              ,ncol=ncol(hbl)))
+  #Create a dataframe for filling in combinations of criteria for hours (i.e. because of "all")
+  hbl_full <- data.frame(matrix(nrow=length(labels)^ncol(hbl[-1])*length(hbl$Hour),
+                                ncol=ncol(hbl)))
 
-colnames(hbl_full) <- colnames(hbl)
+  colnames(hbl_full) <- colnames(hbl)
 
-chunk <- length(labels)^ncol(hbl[-1])
-lvls <- length(labels)
+  chunk <- length(labels)^ncol(hbl[-1])
+  lvls <- length(labels)
 
 #fill in the data frame with values
 for (r in 1:nrow(hbl))
@@ -172,35 +160,36 @@ for (r in 1:nrow(hbl))
   }
 }
 
-#Remove rows where NA is present
-hbl_full <- hbl_full[complete.cases(hbl_full), ]
+  #Remove rows where NA is present
+  hbl_full <- hbl_full[complete.cases(hbl_full), ]
 
-#Remove duplicate entries (keep first)
-hbl_full <- hbl_full[rownames(unique(hbl_full[-1])),]
+  #Remove duplicate entries (keep first)
+  hbl_full <- hbl_full[rownames(unique(hbl_full[-1])),]
 
-#Reset the data frame index
-rownames(hbl_full) <- 1:nrow(hbl_full)
+  #Reset the data frame index
+  rownames(hbl_full) <- 1:nrow(hbl_full)
 
-#categorise hours by type.
-#Time index is added as a column Date, so that order of the hours can be recreated. 
-temp <- merge(data.frame(Date=as.numeric(index(ts_levels)), coredata(ts_levels)),
-              hbl_full,by=colnames(ts_levels), x.all=TRUE)
+  #categorise hours by type
+  #Time index is added as a column Date, so that order of the hours can be recreated. 
+  temp <- merge(data.frame(Date=as.numeric(index(ts_levels)), coredata(ts_levels)),
+                hbl_full,by=colnames(ts_levels), x.all=TRUE)
 
-#Assign the hour type
-if (hour_by_type)
-  {
-  #definition of hours by type
-  hbt <- read.csv('input/dict/hour-type.csv', stringsAsFactors = FALSE, encoding="UTF-8")
-  #Replace NA with hour value
-  for (anHour in hbt$Hour)
+  #Assign the hour type
+  if (hour_by_type)
     {
-    index <- which(.indexhour(ts_cats)==anHour)
-    ts_cats$Hour[index] <- hbt[hbt[,"Hour"] == anHour,"Type"]
-    }
-  } else 
-    {
-      ts_cats$Hour <- temp$Hour[order(temp$Date, decreasing = FALSE)]
-    }
+    #definition of hours by type
+    hbt <- read.csv('input/dict/hour-type.csv', stringsAsFactors = FALSE, encoding="UTF-8")
+    
+    #Replace NA with hour value
+    for (anHour in hbt$Hour)
+      {
+      index <- which(.indexhour(ts_cats)==anHour)
+      ts_cats$Hour[index] <- hbt[hbt[,"Hour"] == anHour,"Type"]
+      }
+    } else 
+      {
+        ts_cats$Hour <- temp$Hour[order(temp$Date, decreasing = FALSE)]
+        }
 
-return(coredata(ts_cats))
-}
+  return(coredata(ts_cats))
+  }

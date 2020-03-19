@@ -19,7 +19,6 @@
 library(tidyverse)
 library(openxlsx)
 source("funcs.R")
-source("read_funcs.R")
 source("ts_data.R")
 source("timeslices.R")
 source("main_dict.R")
