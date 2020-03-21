@@ -35,6 +35,8 @@ categorise_ts <- function(aggr_data, year, timezone = "UTC", hour_by_type = FALS
 
   #Read a csv file with holidays
   holidays <- read.csv('input/dict/holidays.csv', stringsAsFactors = FALSE, encoding="UTF-8")
+  #Keep holidays specific to the year
+  holidays <- holidays[grepl(year,holidays$Date),]
 
   #Definition of hours by level
   hbl <- read.csv('input/dict/hour-map.csv', stringsAsFactors = FALSE, encoding="UTF-8")
