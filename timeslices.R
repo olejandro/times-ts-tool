@@ -19,8 +19,8 @@
 library(zoo)
 library(xts)
 library(timeDate)
-library(Matrix)
-library(arules)
+discretize <- arules::discretize
+
 
 categorise_ts <- function(aggr_data, year, timezone = "UTC", hour_by_type = FALSE){
 

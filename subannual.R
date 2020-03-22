@@ -16,7 +16,8 @@
 # along with TIMES-TS-Tool.  If not, see <https://www.gnu.org/licenses/>.
 
 
-library(tidyverse)
+library(dplyr)
+library(tidyr)
 library(openxlsx)
 source("funcs.R")
 source("ts_data.R")

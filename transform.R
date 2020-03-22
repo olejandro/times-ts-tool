@@ -16,7 +16,8 @@
 # along with TIMES-TS-Tool.  If not, see <https://www.gnu.org/licenses/>.
 
 
-library(tidyverse)
+library(dplyr)
+library(tidyr)
 
 #Combine the season/day/hour categories to Label all the hours
 map_ts <- function(ts_cats)

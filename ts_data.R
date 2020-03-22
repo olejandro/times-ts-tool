@@ -17,7 +17,7 @@
 
 
 library(openxlsx)
-library(tidyverse)
+library(dplyr)
 source("calc_funcs.R")
 source("read_funcs.R")
 

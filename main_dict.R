@@ -17,7 +17,8 @@
 
 
 library(openxlsx)
-library(tidyverse)
+library(dplyr)
+library(tidyr)
 source("read_funcs.R")
 
 # Collect all the processes that need subannual ts data specified in a data frame
