@@ -25,14 +25,17 @@ fetch_timeseries <- function() {
 
 # Overview of data by source ----
 # Ramses: heat demand, wind onshore, wind offshore, PV
+  Ramses_data <- "input/timeseries/Ramses_data.xlsx"  
 # Energinet: power demand, electricity prices in Norway, Sweden and Germany
+  Energinet_data <- "input/timeseries/Markeddata 2011 prices and exchange_NY.xlsx"
+  extra_data <- "input/timeseries/Markeddata 2011 power demand.xlsx"
 # DMI: air and soil temperature which are used to calculate COP for HPs
+  air_temp_data <- "input/DMI/TR13-19_DRY/temperature/"
+  soil_temp_data <- "input/DMI/TR13-19_DRY/soil temperature/"
 # Other: industry profiles, solar heating and resedential heating availability
+  Other_data <- "input/timeseries/other.csv"
 
 # Fetch Ramses data ----
-# Location of Ramses data
-Ramses_data <- "input/timeseries/Ramses_data.xlsx"
-
 # Load some of the Ramses data  
 from_Ramses <- readWorkbook(Ramses_data,
                             sheet = "TVAR",
@@ -50,8 +53,6 @@ colnames(from_Ramses) <- c("Heat_demand",
                            "PV")
 
 # Fetch Energinet data ----
-# Location of Energinet data
-Energinet_data <- "input/timeseries/Markeddata 2011 prices and exchange_NY.xlsx"
 
 # Load some of the Energinet data 
 from_Energinet <- readWorkbook(Energinet_data,
@@ -69,12 +70,10 @@ colnames(from_Energinet) <- c("Price_Norway",
 
 from_Energinet <- as.data.frame(apply(from_Energinet,2,function(x) x/3.6))
 
-# Location of power demand data from Energinet
-extra_data <- "input/timeseries/Markeddata 2011 power demand.xlsx"
-
+# Add a column for power demand data 
 from_Energinet$Power_demand <-NA
 
-# Read power demand data
+# Read power demand data from Energinet
 Power_demand <- readWorkbook(extra_data,
                              sheet = "Sheet1",
                              startRow = 5,
@@ -86,10 +85,6 @@ Power_demand <- readWorkbook(extra_data,
 from_Energinet$Power_demand <- Power_demand$X1
 
 # Fetch and transform DMI data ----
-# Location of DMI data
-air_temp_data <- "input/DMI/TR13-19_DRY/temperature/"
-soil_temp_data <- "input/DMI/TR13-19_DRY/soil temperature/"
-
 # Read temperature data and assign it to DKE or DKW based on station id
 air_temp_DKE <- read_DMI(air_temp_data, "6156", 3)
 air_temp_DKW <- read_DMI(air_temp_data, "6060", 3)
@@ -123,14 +118,10 @@ from_DMI$COP_GSHP_DKW <- apply(days2hours(soil_temp_DKW), MARGIN = 1,
 from_DMI <- apply(from_DMI, MARGIN = 2, FUN=function(x) mean(x)/x) 
 
 # Fetch other data ----
-# Location of other data
-Other_data <- "input/timeseries/other.csv"
-
 # Load Other data
 from_Other <- read.csv(Other_data, header = TRUE)
 
 # Calculate heat savings profile ----
-#(M11-MIN($M$11:$M$8770))/(SUM($M$11:$M$8770)-8760*MIN($M$11:$M$8770))
 
 hw_demand <- min(from_Ramses$Heat_demand)
 annual_hw_demand <- hw_demand * nrow(from_Ramses)
