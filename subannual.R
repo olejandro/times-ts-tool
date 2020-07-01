@@ -38,15 +38,6 @@ year <- 2011
 # Retrieve all the timeseries
 ts_data <- fetch_timeseries()
 
-# Select timeseries to base ts categorisation on
-aggr_data <- ts_data[,c("Power_demand","Heat_demand","PV")]
-
-# Aggregate and add wind to the timeseries to base the categorisation on
-aggr_data$Wind <- (0.05 * ts_data[, "WindOnshore_DKE"]+
-                     0.35 * ts_data[, "WindOnshore_DKW"]+
-                     0.25 * ts_data[, "WindOffshore_DKE"]+
-                     0.35 * ts_data[, "WindOffshore_DKW"])
-
 # Categorise all the hours in a year
 ts_cats <- categorise_ts(aggr_data, year, syssettings = syssettings)
 
