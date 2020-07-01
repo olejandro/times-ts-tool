@@ -1,5 +1,0 @@
-Hour,Power_demand,Heat_demand,PV,Wind
-A,low,all,all,high
-B,high,all,all,low
-C,all,all,low,all
-D,all,all,all,all
