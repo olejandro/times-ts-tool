@@ -18,6 +18,7 @@
 
 library(openxlsx)
 library(tidyr)
+library(dplyr)
 
 filepath <- function(path, file_name_pattern){
   exclude_pattern <- "~$"
@@ -48,6 +49,6 @@ read_V_FT <- function(path, file_name_pattern, sheet, from_row, colNames = TRUE,
   if (missing(fill_columns)){
     return(df)
   } else {
-    return(fill(df,fill_columns))
+    return(fill(df,all_of(fill_columns)))
   }
 }

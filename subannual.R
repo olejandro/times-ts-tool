@@ -26,10 +26,11 @@ source("main_dict.R")
 source("transform.R")
 
 # File locations ----
-mopath <- "../TIMES-DK_DEA-TS"
-subres <- paste(mopath, "SubRES_TMPL", sep="/")
-supxls <- paste(mopath, "SuppXLS", sep="/")
-subannual <- "output/Scen_SYS_SubAnnual_Data.xlsx"
+mopath <- "../../../"
+subres <- paste(mopath, "SubRES_TMPL", sep="")
+supxls <- paste(mopath, "SuppXLS", sep="")
+subannual <- paste(supxls, "Scen_SYS_SubAnnual_Data.xlsx", sep="/")
+syssettings <- paste(mopath, "SysSettings.xlsx", sep="")
 
 # User choices ----
 year <- 2011
@@ -47,7 +48,7 @@ aggr_data$Wind <- (0.05 * ts_data[, "WindOnshore_DKE"]+
                      0.35 * ts_data[, "WindOffshore_DKW"])
 
 # Categorise all the hours in a year
-ts_cats <- categorise_ts(aggr_data, year)
+ts_cats <- categorise_ts(aggr_data, year, syssettings = syssettings)
 
 # Map hours to DayNite, Weekly, and Season time slices
 ts_map <- as.data.frame(map_ts(ts_cats))
@@ -65,7 +66,7 @@ ts_data <- cbind(ts_cats,ts_data)
 
 ### Main dictionary ----
 rules <- create_main_dict(mopath) %>%
-  rename(PSet_PN=Process,CSet_CN=Commodity,"*Description"=Description)
+  rename(PSet_PN=Process,CSet_CN=Commodity,`*Description`=Description)
 
 ### Transform and write ----
 

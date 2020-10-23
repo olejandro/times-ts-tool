@@ -19,10 +19,12 @@
 library(zoo)
 library(xts)
 library(timeDate)
+source("funcs.R")
 discretize <- arules::discretize
 
 
-categorise_ts <- function(aggr_data, year, timezone = "UTC", hour_by_type = FALSE){
+categorise_ts <- function(aggr_data, year, timezone = "UTC", hour_by_type = FALSE,
+                          syssettings = NULL){
 
   #read criterias used to define time slices
   brk_lvls <- read.csv('input/breaks-season.csv', stringsAsFactors = FALSE, encoding="UTF-8")
@@ -191,7 +193,17 @@ for (r in 1:nrow(hbl))
     } else 
       {
         ts_cats$Hour <- temp$Hour[order(temp$Date, decreasing = FALSE)]
-        }
+      }
+  
+  # Update SysSettings
+  if (!is.null(syssettings)) {
+    if (hour_by_type) {
+      DayNite <- hbt
+    } else {
+      DayNite <- hbl
+    }
+    update_syssettings(syssettings,coredata(ts_cats),sbm,dbt,DayNite)
+  }
 
   return(coredata(ts_cats))
   }

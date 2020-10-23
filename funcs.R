@@ -79,3 +79,71 @@ prettify_table <- function(aTable,table_type){
     }
   return(aTable[col_names])
 }
+
+update_syssettings <- function(syssettings,ts_cats,Season,Weekly,DayNite){
+
+  ts_def_sheet <- "Region-Time Slices"
+  ts_def_cols <- c(5,6,7)
+  
+  # Read the existing ts definition table in syssettings
+  xl_ts_def <- read.xlsx(syssettings, sheet = ts_def_sheet, startRow = 4,
+                         colNames = TRUE, cols = ts_def_cols, skipEmptyRows = FALSE)
+  
+  # Determine the maximum number of unique ts levels in ts_cats
+  max_unique_rows = 0
+  
+  for (i in 1:ncol(ts_cats)) {
+    n_unique_rows <- length(unique(ts_cats[,i]))
+    if (max_unique_rows < n_unique_rows)
+    {
+      max_unique_rows <- n_unique_rows
+    }
+  }
+  
+  # Determine the size of the table to be printed in syssettings
+  if (max_unique_rows < nrow(xl_ts_def)) {
+    ts_def2xl_size <- nrow(xl_ts_def)
+  } else {
+    ts_def2xl_size <- max_unique_rows
+  }
+  
+  # Load syssettings workbook
+  wb <- loadWorkbook(syssettings)
+  
+  # Print ts levels
+  for (i in 1:length(ts_def_cols)) {
+    v <- character(ts_def2xl_size)
+    v[1:ts_def2xl_size] <- NA
+    ts_levels <- unique(ts_cats[,i])
+    v[1:length(ts_levels)] <- ts_levels
+    writeData(wb, ts_def_sheet, v, 
+              startCol = ts_def_cols[i], 
+              startRow = 5
+    )
+  }
+  
+  #Print information about timeslices
+  info_tables <- c("season_info", "weekly_info", "daynite_info")
+  existing_tables <- getTables(wb, sheet = ts_def_sheet)
+  tables2delete <- existing_tables #[existing_tables %in% info_tables]
+  
+  if (length(tables2delete)>0) {
+    for (i in 1:length(tables2delete)) {
+      removeTable(wb,sheet = ts_def_sheet, table = tables2delete[i])
+    }
+  }
+  
+  writeDataTable(wb, ts_def_sheet, Season, startCol = 11, startRow = 4,
+                 tableStyle = "TableStyleLight9", tableName = "season_info",
+                 withFilter = FALSE)
+  writeDataTable(wb, ts_def_sheet, Weekly, startCol = 14, startRow = 4,
+                 tableStyle = "TableStyleLight9", tableName = "weekly_info",
+                 withFilter = FALSE)
+  writeDataTable(wb, ts_def_sheet, DayNite, startCol = 17, startRow = 4,
+                 tableStyle = "TableStyleLight9", tableName = "daynite_info",
+                 withFilter = FALSE)
+  
+  # Save modified workbook
+  saveWorkbook(wb, syssettings, overwrite = TRUE)
+  
+}
