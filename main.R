@@ -19,10 +19,10 @@
 library(dplyr)
 library(tidyr)
 library(openxlsx)
-source("funcs.R")
-source("ts_data.R")
-source("timeslices.R")
-source("main_dict.R")
+source("write.R")
+source("fetch.R")
+source("categorise.R")
+source("specify.R")
 source("transform.R")
 
 # File locations ----

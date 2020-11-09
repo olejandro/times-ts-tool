@@ -18,8 +18,8 @@
 
 library(openxlsx)
 library(dplyr)
-source("calc_funcs.R")
-source("read_funcs.R")
+source("calculate.R")
+source("read.R")
 
 fetch_timeseries <- function() {
 

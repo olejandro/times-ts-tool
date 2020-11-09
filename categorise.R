@@ -19,7 +19,7 @@
 library(zoo)
 library(xts)
 library(timeDate)
-source("funcs.R")
+source("write.R")
 
 
 categorise_ts <- function(year, timezone = "UTC", hour_by_type = FALSE,
