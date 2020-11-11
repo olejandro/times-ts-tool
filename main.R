@@ -29,11 +29,11 @@ source("transform.R")
 mopath <- "../../../"
 subres <- paste(mopath, "SubRES_TMPL", sep="")
 supxls <- paste(mopath, "SuppXLS", sep="")
-subannual <- paste(supxls, "Scen_SYS_SubAnnual_Data.xlsx", sep="/")
+subannual <- paste(supxls, "Scen_SubAnnual_Data.xlsx", sep="/")
 syssettings <- paste(mopath, "SysSettings.xlsx", sep="")
 
 # User choices ----
-year <- 2011
+year <- 2018
 
 # Retrieve all the timeseries
 ts_data <- fetch_timeseries()
