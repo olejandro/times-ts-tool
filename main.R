@@ -39,18 +39,10 @@ year <- 2018
 ts_data <- fetch_timeseries()
 
 # Categorise all the hours in a year
-ts_cats <- categorise_ts(aggr_data, year, syssettings = syssettings)
+ts_cats <- categorise_ts(year)
 
 # Map hours to DayNite, Weekly, and Season time slices
 ts_map <- as.data.frame(map_ts(ts_cats))
-
-# Timeseries to be transformed to represent fraction of max production
-re_series <- c(grep("Wind",colnames(ts_data),value=TRUE), "PV")
-
-# Transform some of the timeseries to represent fraction of max production
-ts_data[,re_series] <- sweep(ts_data[,re_series],
-                                 2, apply(ts_data[,re_series], 2, FUN = max), "/")
-
 
 # Add categories to the timeseries
 ts_data <- cbind(ts_cats,ts_data)
