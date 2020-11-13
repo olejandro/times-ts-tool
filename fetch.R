@@ -22,39 +22,47 @@ source("calculate.R")
 source("read.R")
 
 fetch_timeseries <- function() {
-
-  # Overview of data by source ----
-
-  # Other: industry profiles, solar heating and resedential heating availability
-  Other_data <- "input/timeseries/other.csv"
   
-  # One:
+  # Overview of data by source ----
+  # Plexos ENTSO-E data:
+  solar_data <- filepath("input/timeseries/Solar","IE")
+  onshore_data <- filepath("input/timeseries/Onshore","IE")
+  offshore_data <- filepath("input/timeseries/Offshore","IE")
+
+  # Fetch PLEXOS ENTSO-E data ----
+  entsoe_solar <- read.csv(solar_data, header = TRUE)
+  # Drop the last record => it is from a different year
+  entsoe_solar <- entsoe_solar[-1,]
+  
+  entsoe_onshore <- read.csv(onshore_data, header = TRUE)
+  entsoe_offshore <- read.csv(offshore_data, header = TRUE)
+  
+  selectedYear <- "X1"
+  
+  # Combine into a singe dataframe one data year per dataset
+  from_entsoe <- cbind(entsoe_solar[selectedYear],
+                       entsoe_onshore[selectedYear],
+                       entsoe_offshore[selectedYear])
+  
+  # Give names to the columns with data
+  colnames(from_entsoe) <- c("solar_2018",
+                          "onshore_2018",
+                          "offshore_2018")
 
 # Fetch Ramses data ----
 # Load some of the Ramses data  
-from_One <- readWorkbook(One_data,
-                            sheet = "TVAR",
-                            startRow = 11, 
-                            colNames = FALSE,
-                            rowNames = FALSE,
-                            cols = c(8,10,11,13,14,15))
-
-# Give names to the columns with loaded Ramses data
-colnames(from_One) <- c("Heat_demand",
-                           "WindOnshore_DKE",
-                           "WindOnshore_DKW",
-                           "WindOffshore_DKE",
-                           "WindOffshore_DKW",
-                           "PV")
+# from_One <- readWorkbook(One_data,
+#                             sheet = "TVAR",
+#                             startRow = 11, 
+#                             colNames = FALSE,
+#                             rowNames = FALSE,
+#                             cols = c(8,10,11,13,14,15))
   
 
-# Combine all the data ----
-timeseries <-cbind(from_One,
-                   from_Other
+
+  # Combine all the data ----
+  timeseries <-cbind(from_entsoe#,
                    )
-
-# Substitute NAs with zeros
-#timeseries[is.na(timeseries)] <- 0
-
+  
 return(timeseries)
 }
