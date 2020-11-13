@@ -33,6 +33,18 @@ filepath <- function(path, file_name_pattern){
   return(paste(path, file_name, sep = sep))
 }
 
+checkModelPath <- function(modelPath){
+  defaultOutputDir <- "output"
+  if (dir.exists(filepath(modelPath,"SysSettings"))){
+    return(modelPath)
+  } else {
+    if (!dir.exists(defaultOutputDir)){
+      dir.create(defaultOutputDir)
+    }
+    return(paste0(defaultOutputDir,"/"))
+  }
+}
+
 read_DMI <- function(path, file_name_pattern, column=NULL){
   data <- read.csv(filepath(path,file_name_pattern), sep = ";")
   if (is.null(column)) {

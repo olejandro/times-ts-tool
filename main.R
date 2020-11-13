@@ -25,11 +25,11 @@ source("categorise.R")
 source("specify.R")
 source("transform.R")
 
-# File locations ----
+# File locations ---- 
 mopath <- "../../../"
-subres <- paste(mopath, "SubRES_TMPL", sep="")
-supxls <- paste(mopath, "SuppXLS", sep="")
-subannual <- paste(supxls, "Scen_SubAnnual_Data.xlsx", sep="/")
+subres <- paste(mopath, "SubRES_TMPL/", sep="")
+supxls <- paste(mopath, "SuppXLS/", sep="")
+subannual <- paste(checkModelPath(supxls), "Scen_SubAnnual_Data.xlsx", sep="")
 syssettings <- paste(mopath, "SysSettings.xlsx", sep="")
 
 # User choices ----
@@ -48,8 +48,7 @@ ts_map <- as.data.frame(map_ts(ts_cats))
 ts_data <- cbind(ts_cats,ts_data)
 
 ### Main dictionary ----
-rules <- create_main_dict(mopath) %>%
-  rename(PSet_PN=Process,CSet_CN=Commodity,`*Description`=Description)
+rules <- create_main_dict(mopath)
 
 ### Transform and write ----
 
@@ -116,5 +115,10 @@ for (aTarget_Sheet in unique(rules$Target_Sheet))
   }
 
 # Save the workbook
-saveWorkbook(wb, subannual, overwrite = TRUE)
+
+if (saveWorkbook(wb, subannual, overwrite = TRUE, returnValue = TRUE)){
+  print(paste("Successfully created:",subannual))
+} else {
+  print(paste("Failed creating:",subannual))
+}
 
