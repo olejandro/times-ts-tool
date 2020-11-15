@@ -33,16 +33,31 @@ fetch_timeseries <- function() {
   entsoe_solar <- read.csv(solar_data, header = TRUE)
   # Drop the last record => it is from a different year
   entsoe_solar <- entsoe_solar[-1,]
-  
+
   entsoe_onshore <- read.csv(onshore_data, header = TRUE)
   entsoe_offshore <- read.csv(offshore_data, header = TRUE)
-  
+
   selectedYear <- "X1"
+
+  # Combine into a singe dataframe one data year per dataset
+  from_entsoe <- cbind(entsoe_solar[selectedYear],
+                       entsoe_onshore[selectedYear],
+                       entsoe_offshore[selectedYear])
   
   # Combine into a singe dataframe one data year per dataset
   from_entsoe <- cbind(entsoe_solar[selectedYear],
                        entsoe_onshore[selectedYear],
                        entsoe_offshore[selectedYear])
+  
+  # # Calculate means
+  # entsoe_solar <- rowMeans(entsoe_solar[sapply(entsoe_solar, is.numeric)])
+  # entsoe_onshore <- rowMeans(entsoe_onshore[sapply(entsoe_onshore, is.numeric)])
+  # entsoe_offshore <- rowMeans(entsoe_offshore[sapply(entsoe_offshore, is.numeric)])
+  # 
+  # 
+  # from_entsoe <- as.data.frame(cbind(entsoe_solar,
+  #                      entsoe_onshore,
+  #                      entsoe_offshore))
   
   # Give names to the columns with data
   colnames(from_entsoe) <- c("solar_2018",
