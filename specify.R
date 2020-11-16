@@ -36,26 +36,46 @@ create_main_dict <- function(mopath){
                   "EPPSol_02*",
                   "COMPVELC*")
   solarType2 <- c("EPPSol_03*")
-    
+  
+  regions_names <- c("IE","IE-CW","IE-D","IE-KE","IE-KK","IE-LS","IE-LD","IE-LH",
+               "IE-MH","IE-OY","IE-WH","IE-WX","IE-WW","IE-CE","IE-CO","IE-KY",
+               "IE-LK","IE-TA","IE-WD","IE-G","IE-LM","IE-MO","IE-RN","IE-SO",
+               "IE-CN","IE-DL","IE-MN")
+  
   
   # ELC processes ----
   
-  
-  
-  
   elc_techs_af <- data.frame(c(existingWind,newWindOnshore,newWindOffshore,
                                solarType1,solarType2)) %>%
-    rename(PSet_PN=1) %>%
+    rename(Pset_PN=1) %>%
     mutate(
-      Value=ifelse(PSet_PN %in% solarType2,
-                   0.011, # solarType2 are assumed to have 10% higher output, therefore * by 0.011
-                   0.01), # original timeseries are in %, therefore * by 0.01
-      Serie=ifelse(PSet_PN %in% c(existingWind,newWindOnshore),"onshore_2018",NA),
-      Serie=ifelse(PSet_PN %in% newWindOffshore,"offshore_2018",Serie),
-      Serie=ifelse(PSet_PN %in% c(solarType1,solarType2),"solar_2018",Serie),
+      Value=ifelse(Pset_PN %in% solarType2,
+                   1.1, # solarType2 are assumed to have 10% higher output, therefore * by 1.1
+                   1),
+      Serie=ifelse(Pset_PN %in% c(existingWind,newWindOnshore),"onshore",NA),
+      Serie=ifelse(Pset_PN %in% newWindOffshore,"offshore",Serie),
+      Serie=ifelse(Pset_PN %in% c(solarType1,solarType2),"solar",Serie),
       Attribute="NCAP_AF",Region="AllRegions",Year=defaultYear,
-      TS_Level="DayNite",Target_Sheet="ELC_AF",Transformation="mult_avg"
-    )
+      TS_Level="DayNite",Target_Sheet="ELC_AF",Transformation="mult_avg",
+      Cset_set=NA,Cset_CD=NA)
+  
+  # Transport ----
+  
+  tra_dem <- data.frame(regions_names) %>%
+    rename(Region=1) %>%
+    mutate(
+      Serie=ifelse(Region %in% c("IE"),"transport_national",NA),
+      Serie=ifelse(Region %in% c("IE-D"),"transport_dublin",Serie),
+      Serie=ifelse(Region %in% c("IE-KE","IE-MH","IE-WW"),"transport_greater_dublin",Serie),
+      Serie=ifelse(Region %in% c("IE-CW","IE-KK","IE-LS","IE-LD","IE-LH","IE-OY",
+                                 "IE-WH","IE-WX","IE-CE","IE-KY","IE-TA","IE-LM",
+                                 "IE-MO","IE-RN","IE-SO","IE-CN","IE-DL","IE-MN"),
+                   "transport_average1",Serie),
+      Serie=ifelse(Region %in% c("IE-CO","IE-LK","IE-WD","IE-G"),
+                   "transport_average1",Serie),
+      Attribute="DEM_FR",Year=defaultYear,
+      TS_Level="DayNite",Target_Sheet="TRA_DEM",Transformation="none_shr",
+      Cset_set="DEM",Cset_CD="Transport Demand*",Pset_PN=NA,Value=NA)
   
   # vt_elc_techs <- read_V_FT(mopath,"ELC","TechsR",2,fill_columns = 1:2) %>%
   #   select(TechName,TechDesc,Region,`Comm-IN`) %>%
@@ -106,7 +126,8 @@ create_main_dict <- function(mopath){
   
 # Create main dictionary ----
   main_dict <- rbind(
-    elc_techs_af
+    elc_techs_af,
+    tra_dem
     )
   
   return(main_dict)

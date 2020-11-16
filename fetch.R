@@ -17,6 +17,7 @@
 
 
 library(openxlsx)
+library(xts)
 library(dplyr)
 source("calculate.R")
 source("read.R")
@@ -25,31 +26,35 @@ fetch_timeseries <- function() {
   
   # Overview of data by source ----
   # Plexos ENTSO-E data:
-  solar_data <- filepath("input/timeseries/Solar","IE")
-  onshore_data <- filepath("input/timeseries/Onshore","IE")
-  offshore_data <- filepath("input/timeseries/Offshore","IE")
-
-  # Fetch PLEXOS ENTSO-E data ----
-  entsoe_solar <- read.csv(solar_data, header = TRUE)
-  # Drop the last record => it is from a different year
-  entsoe_solar <- entsoe_solar[-1,]
-
-  entsoe_onshore <- read.csv(onshore_data, header = TRUE)
-  entsoe_offshore <- read.csv(offshore_data, header = TRUE)
-
-  selectedYear <- "X1"
-
-  # Combine into a singe dataframe one data year per dataset
-  from_entsoe <- cbind(entsoe_solar[selectedYear],
-                       entsoe_onshore[selectedYear],
-                       entsoe_offshore[selectedYear])
+  entsoe_solar_data <- filepath("input/timeseries/Solar","IE")
+  entsoe_onshore_data <- filepath("input/timeseries/Onshore","IE")
+  entsoe_offshore_data <- filepath("input/timeseries/Offshore","IE")
   
-  # Combine into a singe dataframe one data year per dataset
-  from_entsoe <- cbind(entsoe_solar[selectedYear],
-                       entsoe_onshore[selectedYear],
-                       entsoe_offshore[selectedYear])
+  # Renewables ninja
+  ninja_solar_data <- filepath("input/timeseries/renewables-ninja","pv")
+  ninja_wind_data <- filepath("input/timeseries/renewables-ninja","wind")
   
-  # # Calculate means
+  # Transport data
+  transport_data <- "input/misc/transport.xlsx"
+
+  # # Fetch PLEXOS ENTSO-E data ----
+  # entsoe_solar <- read.csv(entsoe_solar_data, header = TRUE)
+  # # Drop the last record => it is from a different year
+  # entsoe_solar <- entsoe_solar[-1,]
+  # 
+  # entsoe_onshore <- read.csv(entsoe_onshore_data, header = TRUE)
+  # entsoe_offshore <- read.csv(entsoe_offshore_data, header = TRUE)
+  # 
+  # # a) Use a single year ----
+  # selectedYear <- "X1"
+  # 
+  # # Combine into a singe dataframe one data year per dataset
+  # from_entsoe <- cbind(entsoe_solar[selectedYear],
+  #                      entsoe_onshore[selectedYear],
+  #                      entsoe_offshore[selectedYear])
+  # 
+
+  # # b) Use multi year mean ----
   # entsoe_solar <- rowMeans(entsoe_solar[sapply(entsoe_solar, is.numeric)])
   # entsoe_onshore <- rowMeans(entsoe_onshore[sapply(entsoe_onshore, is.numeric)])
   # entsoe_offshore <- rowMeans(entsoe_offshore[sapply(entsoe_offshore, is.numeric)])
@@ -59,25 +64,127 @@ fetch_timeseries <- function() {
   #                      entsoe_onshore,
   #                      entsoe_offshore))
   
-  # Give names to the columns with data
-  colnames(from_entsoe) <- c("solar_2018",
-                          "onshore_2018",
-                          "offshore_2018")
+  # # Give names to the columns with data
+  # colnames(from_entsoe) <- c("solar",
+  #                         "onshore",
+  #                         "offshore")
+  
+  # Fetch renewables.ninja data ----
+  # Specify timezone of the series
+  ninja_tz <- "UTC"
+  
+  ninja_solar <- read.csv.zoo(ninja_solar_data, header = TRUE, tz=ninja_tz)
+  ninja_wind <- read.csv.zoo(ninja_wind_data, header = TRUE, tz=ninja_tz)
+  
+  # Keep only IE data
+  
+  ninja_solar <- ninja_solar[, grepl("IE", names(ninja_solar)), drop=FALSE]
+  ninja_wind <- ninja_wind[, grepl("IE", names(ninja_wind)), drop=FALSE]
 
-# Fetch Ramses data ----
-# Load some of the Ramses data  
-# from_One <- readWorkbook(One_data,
-#                             sheet = "TVAR",
-#                             startRow = 11, 
-#                             colNames = FALSE,
-#                             rowNames = FALSE,
-#                             cols = c(8,10,11,13,14,15))
+  # Combine into a singe dataframe
+  from_ninja <- cbind(ninja_solar,
+                      ninja_wind)
+  
+  colnames(from_ninja) <- c("solar",
+                            "offshore",
+                            "onshore")
+  
+  # a) Use a single year ----
+  keepYear <- 2016
+  
+  # Create index for subsetting
+  keepYearIndex <- seq(from = as.POSIXct(paste(keepYear,"01-01 00:00",sep="-"), tz=ninja_tz),
+                       to = as.POSIXct(paste(keepYear,"12-31 23:00",sep="-"), tz=ninja_tz), by = "hour")
+  
+  # Skip 29.02 if present
+  if (!is.na(as.Date(paste(keepYear, 2, 29, sep = "-"), format="%Y-%m-%d"))) {
+    keepYearIndex <- keepYearIndex[which(keepYearIndex < paste(keepYear,"02-29 00:00:00",sep="-") | 
+                                         keepYearIndex > paste(keepYear,"02-29 23:00:00",sep="-"))]
+  }
+  
+  # Keep only selected year and remove time index
+  from_ninja <- as.data.frame(coredata(from_ninja[keepYearIndex]))
+
+  # b) Use multi year mean ----
+  
+  #...
+
+  # Fetch Transport data ----
+  
+  # Generate transport demand time series
+  transport_year <- 2018
+  tz <- "UTC"
+  
+  dayLoadRows <- seq(19,26,1)
+  dayLoadCols <- c(2,5)
+  
+  hourLoadRows <- seq(32,56,1)
+  hourLoadCols <- c(2,5)
+  
+  hourShares <- readXlRange(xlFilePath = transport_data,
+                            rows = hourLoadRows,
+                            cols = hourLoadCols)
+  
+  dayShares <- readXlRange(xlFilePath = transport_data,
+                           rows = dayLoadRows,
+                           cols = dayLoadCols)
+  
+  #create hourly index for the whole year, assuming UTC time zone
+  time_index <- seq(from = as.POSIXct(paste(transport_year,"01-01 00:00",sep="-"), tz=tz),
+                    to = as.POSIXct(paste(transport_year,"12-31 23:00",sep="-"), tz=tz),
+                    by = "hour")
+  
+  #create a data frame to categorise hours
+  transport_series <- xts(data.frame(matrix(ncol=length(colnames(dayShares)),
+                                            nrow=length(time_index))),
+                          order.by = time_index)
+  
+  colnames(transport_series) <- colnames(dayShares)
+  
+  # Assign day shares to the dataframe
+  for (i in index(dayShares)) {
+    if (i == 7) {
+      dayIndex <- 0
+    } else {
+      dayIndex <- i
+    }
+    for (aColName in colnames(dayShares)){
+      transport_series[.indexwday(transport_series) == dayIndex,aColName] <- 
+        dayShares[i,aColName] 
+    }
+  }
+  
+  # Multiply day shares in the dataframe by hour shares
+  for (i in index(hourShares)) {
+    for (aColName in colnames(hourShares)){
+      transport_series[.indexhour(transport_series) == (i-1),aColName] <- 
+        hourShares[i,aColName] * transport_series[.indexhour(transport_series) == (i-1),aColName]
+    }
+  }
+  
+  transport_series <- as.data.frame(coredata(transport_series))
+  
+  transport <- transport_series[,c(1,2,3)]
+  
+  colnames(transport) <- c("transport_national","transport_dublin",
+                           "transport_greater_dublin")
+  
+  transport[,"transport_average1"] <- (transport_series["Urban towns"] +
+                                         transport_series["Rural areas"] +
+                                         transport_series["Other urban areas"])/3
+  
+  transport[,"transport_average2"] <- (transport_series["Regional cities"] +
+                                         (transport_series["Urban towns"] +
+                                            transport_series["Rural areas"] +
+                                            transport_series["Other urban areas"])/3)/2
   
 
-
   # Combine all the data ----
-  timeseries <-cbind(from_entsoe#,
-                   )
+  timeseries <-cbind(
+    from_ninja,
+    transport
+    # from_entsoe
+    )
   
 return(timeseries)
 }
