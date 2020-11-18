@@ -19,7 +19,7 @@
 library(openxlsx)
 library(dplyr)
 
-write_TFM <- function(aTable,wb,sheet,type='DINS',position=c(2, 1),fresh_sheet=FALSE,
+write_TFM <- function(aTable,wb,sheet,type='INS',position=c(2, 1),fresh_sheet=FALSE,
                       no_empty_cols=TRUE, pretty_table=TRUE) {
   # Table tag
   tag <- paste("~TFM",type,sep="_")

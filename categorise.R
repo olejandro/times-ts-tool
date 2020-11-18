@@ -33,8 +33,12 @@ categorise_ts <- function(year, timezone = "UTC", hour_by_type = FALSE,
 
   #Read a csv file with holidays
   holidays <- read.csv('input/dict/holidays.csv', stringsAsFactors = FALSE, encoding="UTF-8")
+  
   #Keep holidays specific to the year
   holidays <- holidays[grepl(year,holidays$Date),]
+  
+  #Keyword for non-work days, i.e. holidays / forced holidays, etc.
+  nonWorkday <- "NW"
 
   #!Due to summer time, starting and ending hours of week-ends would be classified differently
   #!compared to the original TS tool. Nothing special is done to time shift in Ramses, 
@@ -64,27 +68,12 @@ categorise_ts <- function(year, timezone = "UTC", hour_by_type = FALSE,
 
   #Check whether there is inconsistency between Day/Type definition and NW assignment
 
-  if("NW" %in% dbt$Type)
+  if(nonWorkday %in% dbt$Type)
     {
-    NW <- "NW"
-    } else
-      {
-        print("Please specify a consistent label for a holiday!")
-        exit
-        }                                            
-
-  #Include holidays as a non-work day
-  ts_cats$Day[holidays$Date] <- NW
+    #Include holidays as a non-work day
+    ts_cats$Day[holidays$Date] <- nonWorkday
+    }                                            
   
-  #Include additional days as non-work days
-  #The day after Kristi himmelfartsdag
-  ts_cats$Day[as.character(as.Date(holidays[holidays[,"Holiday"]
-                                          == "Kristi himmelfartsdag","Date"])+1)] <- NW
-  #23.12-31.12
-  ts_cats$Day[paste(paste(year, "12-23", sep = "-"),
-                    paste(year, "12-31", sep = "-"), sep = "/")] <- NW
-
-
   #Assign the hour type
   hbt <- read.csv('input/dict/hour-type.csv', stringsAsFactors = FALSE, encoding="UTF-8")
     

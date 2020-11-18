@@ -33,6 +33,18 @@ filepath <- function(path, file_name_pattern){
   return(paste(path, file_name, sep = sep))
 }
 
+checkModelPath <- function(modelPath){
+  defaultOutputDir <- "output"
+  if (dir.exists(filepath(modelPath,"SysSettings"))){
+    return(modelPath)
+  } else {
+    if (!dir.exists(defaultOutputDir)){
+      dir.create(defaultOutputDir)
+    }
+    return(paste0(defaultOutputDir,"/"))
+  }
+}
+
 read_DMI <- function(path, file_name_pattern, column=NULL){
   data <- read.csv(filepath(path,file_name_pattern), sep = ";")
   if (is.null(column)) {
@@ -50,5 +62,41 @@ read_V_FT <- function(path, file_name_pattern, sheet, from_row, colNames = TRUE,
     return(df)
   } else {
     return(fill(df,all_of(fill_columns)))
+  }
+}
+
+readXlRange <- function(xlFilePath, sheet=NULL, colNames=TRUE, rowNames=TRUE,
+                        rows, cols, detectDates = TRUE) {
+  
+  # If the sheet name is not NULL read that sheet
+  if (!is.null(sheet)) {
+    df <- readWorkbook(xlFilePath,
+                       sheet = sheet,
+                       colNames = colNames,
+                       rowNames = rowNames,
+                       rows = rows,
+                       cols = cols,
+                       detectDates = detectDates)
+    # Assign column name sheet name if there is only one column
+    if (length(colnames(df)) == 1) {
+      colnames(df) <- sheet
+    }
+    return(df)
+  } else {
+    sheets <- getSheetNames(xlFilePath)
+    for (aSheetName in sheets)
+    {
+      temp_df <- readXlRange(xlFilePath = xlFilePath,
+                             sheet = aSheetName,
+                             rows = rows,
+                             cols = cols)
+      # Check the position of the sheet in the sheets list
+      if (match(aSheetName,sheets) == 1) {
+        df <- temp_df
+      } else {
+        df <- cbind(df, temp_df)
+      }
+    }
+    return(df)
   }
 }
