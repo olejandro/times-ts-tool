@@ -72,8 +72,8 @@ create_main_dict <- function(mopath){
                                  "IE-MO","IE-RN","IE-SO","IE-CN","IE-DL","IE-MN"),
                    "transport_average1",Serie),
       Serie=ifelse(Region %in% c("IE-CO","IE-LK","IE-WD","IE-G"),
-                   "transport_average1",Serie),
-      Attribute="DEM_FR",Year=defaultYear,
+                   "transport_average2",Serie),
+      Attribute="COM_FR",Year=defaultYear,
       TS_Level="DayNite",Target_Sheet="TRA_DEM",Transformation="none_shr",
       Cset_set="DEM",Cset_CD="Transport Demand*",Pset_PN=NA,Value=NA)
   
