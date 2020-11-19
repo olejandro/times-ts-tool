@@ -26,7 +26,7 @@ source("specify.R")
 source("transform.R")
 
 # File locations ---- 
-mopath <- "../../../"
+mopath <- "../../"
 subres <- paste(mopath, "SubRES_TMPL/", sep="")
 supxls <- paste(mopath, "SuppXLS/", sep="")
 subannual <- paste(checkModelPath(supxls), "Scen_SubAnnual_Data.xlsx", sep="")
