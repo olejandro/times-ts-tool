@@ -29,13 +29,12 @@ create_main_dict <- function(mopath){
   
   defaultYear <- 2018
   
-  existingWind <- c("EPPWin_00*")
-  newWindOnshore <-c("EPPWin_*_ON")  
-  newWindOffshore <- c("EPPWin_02_OF")
-  solarType1 <- c("EPPSol_01*",
-                  "EPPSol_02*",
+  windOnshore <- c("P-RNW-WIN-ON*")
+  newWindOffshore <- c("P-RNW-WIN-OF*")
+  solarType1 <- c("P-RNW-SOL-PV01",
+                  "P-RNW-SOL-PV02",
                   "COMPVELC*")
-  solarType2 <- c("EPPSol_03*")
+  solarType2 <- c("P-RNW-SOL-PV03")
   
   regions_names <- c("IE","IE-CW","IE-D","IE-KE","IE-KK","IE-LS","IE-LD","IE-LH",
                "IE-MH","IE-OY","IE-WH","IE-WX","IE-WW","IE-CE","IE-CO","IE-KY",
@@ -45,14 +44,14 @@ create_main_dict <- function(mopath){
   
   # ELC processes ----
   
-  elc_techs_af <- data.frame(c(existingWind,newWindOnshore,newWindOffshore,
+  elc_techs_af <- data.frame(c(windOnshore,newWindOffshore,
                                solarType1,solarType2)) %>%
     rename(Pset_PN=1) %>%
     mutate(
       Value=ifelse(Pset_PN %in% solarType2,
                    1.1, # solarType2 are assumed to have 10% higher output, therefore * by 1.1
                    1),
-      Serie=ifelse(Pset_PN %in% c(existingWind,newWindOnshore),"onshore",NA),
+      Serie=ifelse(Pset_PN %in% c(windOnshore),"onshore",NA),
       Serie=ifelse(Pset_PN %in% newWindOffshore,"offshore",Serie),
       Serie=ifelse(Pset_PN %in% c(solarType1,solarType2),"solar",Serie),
       Attribute="NCAP_AF",Region="AllRegions",Year=defaultYear,
