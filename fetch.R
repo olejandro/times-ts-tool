@@ -36,6 +36,9 @@ fetch_timeseries <- function() {
   
   # Transport data
   transport_data <- "input/misc/transport.xlsx"
+  
+  # Xiufeng data
+  xiufeng_data <- "input/timeseries/Xiufeng/xiufeng-series.csv"
 
   # # Fetch PLEXOS ENTSO-E data ----
   # entsoe_solar <- read.csv(entsoe_solar_data, header = TRUE)
@@ -69,41 +72,41 @@ fetch_timeseries <- function() {
   #                         "onshore",
   #                         "offshore")
   
-  # Fetch renewables.ninja data ----
-  # Specify timezone of the series
-  ninja_tz <- "UTC"
-  
-  ninja_solar <- read.csv.zoo(ninja_solar_data, header = TRUE, tz=ninja_tz)
-  ninja_wind <- read.csv.zoo(ninja_wind_data, header = TRUE, tz=ninja_tz)
-  
-  # Keep only IE data
-  
-  ninja_solar <- ninja_solar[, grepl("IE", names(ninja_solar)), drop=FALSE]
-  ninja_wind <- ninja_wind[, grepl("IE", names(ninja_wind)), drop=FALSE]
-
-  # Combine into a singe dataframe
-  from_ninja <- cbind(ninja_solar,
-                      ninja_wind)
-  
-  colnames(from_ninja) <- c("solar",
-                            "offshore",
-                            "onshore")
-  
-  # a) Use a single year ----
-  keepYear <- 2016
-  
-  # Create index for subsetting
-  keepYearIndex <- seq(from = as.POSIXct(paste(keepYear,"01-01 00:00",sep="-"), tz=ninja_tz),
-                       to = as.POSIXct(paste(keepYear,"12-31 23:00",sep="-"), tz=ninja_tz), by = "hour")
-  
-  # Skip 29.02 if present
-  if (!is.na(as.Date(paste(keepYear, 2, 29, sep = "-"), format="%Y-%m-%d"))) {
-    keepYearIndex <- keepYearIndex[which(keepYearIndex < paste(keepYear,"02-29 00:00:00",sep="-") | 
-                                         keepYearIndex > paste(keepYear,"02-29 23:00:00",sep="-"))]
-  }
-  
-  # Keep only selected year and remove time index
-  from_ninja <- as.data.frame(coredata(from_ninja[keepYearIndex]))
+  # # Fetch renewables.ninja data ----
+  # # Specify timezone of the series
+  # ninja_tz <- "UTC"
+  # 
+  # ninja_solar <- read.csv.zoo(ninja_solar_data, header = TRUE, tz=ninja_tz)
+  # ninja_wind <- read.csv.zoo(ninja_wind_data, header = TRUE, tz=ninja_tz)
+  # 
+  # # Keep only IE data
+  # 
+  # ninja_solar <- ninja_solar[, grepl("IE", names(ninja_solar)), drop=FALSE]
+  # ninja_wind <- ninja_wind[, grepl("IE", names(ninja_wind)), drop=FALSE]
+  # 
+  # # Combine into a singe dataframe
+  # from_ninja <- cbind(ninja_solar,
+  #                     ninja_wind)
+  # 
+  # colnames(from_ninja) <- c("solar",
+  #                           "offshore",
+  #                           "onshore")
+  # 
+  # # a) Use a single year ----
+  # keepYear <- 2016
+  # 
+  # # Create index for subsetting
+  # keepYearIndex <- seq(from = as.POSIXct(paste(keepYear,"01-01 00:00",sep="-"), tz=ninja_tz),
+  #                      to = as.POSIXct(paste(keepYear,"12-31 23:00",sep="-"), tz=ninja_tz), by = "hour")
+  # 
+  # # Skip 29.02 if present
+  # if (!is.na(as.Date(paste(keepYear, 2, 29, sep = "-"), format="%Y-%m-%d"))) {
+  #   keepYearIndex <- keepYearIndex[which(keepYearIndex < paste(keepYear,"02-29 00:00:00",sep="-") | 
+  #                                        keepYearIndex > paste(keepYear,"02-29 23:00:00",sep="-"))]
+  # }
+  # 
+  # # Keep only selected year and remove time index
+  # from_ninja <- as.data.frame(coredata(from_ninja[keepYearIndex]))
 
   # b) Use multi year mean ----
   
@@ -179,10 +182,16 @@ fetch_timeseries <- function() {
                                             transport_series["Other urban areas"])/3)/2
   
 
+  # Fetch Xiufeng data ----
+  
+  from_xiufeng <- read.csv(xiufeng_data,header=TRUE, sep=",",stringsAsFactors=FALSE)
+  
+  
   # Combine all the data ----
   timeseries <-cbind(
-    from_ninja,
-    transport
+    #from_ninja,
+    transport,
+    from_xiufeng
     # from_entsoe
     )
   

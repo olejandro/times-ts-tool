@@ -39,7 +39,7 @@ year <- 2018
 ts_data <- fetch_timeseries()
 
 # Categorise all the hours in a year
-ts_cats <- categorise_ts(year)
+ts_cats <- categorise_ts(year,syssettings=syssettings)
 
 # Map hours to DayNite, Weekly, and Season time slices
 ts_map <- as.data.frame(map_ts(ts_cats))

@@ -31,12 +31,11 @@ create_main_dict <- function(mopath){
   
   windOnshore <- c("P-RNW-WIN-ON*")
   newWindOffshore <- c("P-RNW-WIN-OF*")
-  solarType1 <- c("P-RNW-SOL-PV01",
-                  "P-RNW-SOL-PV02",
-                  "COMPVELC*")
-  solarType2 <- c("P-RNW-SOL-PV03")
+  solar <- c("P-RNW-SOL-*", "COMPVELC*")
+  tidal  <- c("P-RNW*TID*")
+  wave <- c("P-RNW*WAV*")
   
-  regions_names <- c("IE","IE-CW","IE-D","IE-KE","IE-KK","IE-LS","IE-LD","IE-LH",
+  regions_names <- c("IE","National","IE-CW","IE-D","IE-KE","IE-KK","IE-LS","IE-LD","IE-LH",
                "IE-MH","IE-OY","IE-WH","IE-WX","IE-WW","IE-CE","IE-CO","IE-KY",
                "IE-LK","IE-TA","IE-WD","IE-G","IE-LM","IE-MO","IE-RN","IE-SO",
                "IE-CN","IE-DL","IE-MN")
@@ -45,17 +44,19 @@ create_main_dict <- function(mopath){
   # ELC processes ----
   
   elc_techs_af <- data.frame(c(windOnshore,newWindOffshore,
-                               solarType1,solarType2)) %>%
+                               solar,wave,tidal)) %>%
     rename(Pset_PN=1) %>%
+    merge(data.frame(c("IE","National"))) %>%
+    rename(Region=2) %>%
     mutate(
-      Value=ifelse(Pset_PN %in% solarType2,
-                   1.1, # solarType2 are assumed to have 10% higher output, therefore * by 1.1
-                   1),
+      Value=1,
       Serie=ifelse(Pset_PN %in% c(windOnshore),"onshore",NA),
       Serie=ifelse(Pset_PN %in% newWindOffshore,"offshore",Serie),
-      Serie=ifelse(Pset_PN %in% c(solarType1,solarType2),"solar",Serie),
-      Attribute="NCAP_AF",Region="AllRegions",Year=defaultYear,
-      TS_Level="DayNite",Target_Sheet="ELC_AF",Transformation="mult_avg",
+      Serie=ifelse(Pset_PN %in% c(solar),"solar",Serie),
+      Serie=ifelse(Pset_PN %in% c(wave),"wave",Serie),
+      Serie=ifelse(Pset_PN %in% c(tidal),"tidal",Serie),
+      Attribute="NCAP_AF",Year=defaultYear,
+      TS_Level="DayNite",Target_Sheet="PWR_AF",Transformation="mult_avg",
       Cset_set=NA,Cset_CD=NA)
   
   # Transport ----
