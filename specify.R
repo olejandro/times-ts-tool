@@ -41,7 +41,30 @@ create_main_dict <- function(mopath){
                "IE-CN","IE-DL","IE-MN")
   
   
-  # ELC processes ----
+   # RSD ----
+  
+  rsd_sol_com_fr <- data.frame(c("IE","National")) %>%
+    rename(Region=1) %>%
+    mutate(Serie="solar",
+           Attribute="COM_FR",Year=defaultYear,
+           TS_Level="DayNite",Target_Sheet="RSDSOL",Transformation="none_shr",
+           Cset_set=NA,Cset_CD=NA,Cset_CN="RSDSOL",Pset_PN=NA,Value=NA)
+  
+  rsd_sh_com_fr <- data.frame(c("IE","National")) %>%
+    rename(Region=1) %>%
+    mutate(Serie="Space_Heating",
+           Attribute="COM_FR",Year=defaultYear,
+           TS_Level="DayNite",Target_Sheet="RSD_SH",Transformation="none_shr",
+           Cset_set=NA,Cset_CD=NA,Cset_CN="RSDSH*",Pset_PN=NA,Value=NA)
+  
+  rsd_rtft_af <- data.frame(c("IE","National")) %>%
+    rename(Region=1) %>%
+    mutate(Serie="Heat_Savings",
+           Attribute="NCAP_AF",Year=defaultYear,
+           TS_Level="DayNite",Target_Sheet="RSD_RTFT",Transformation="none_sbd",
+           Cset_set=NA,Cset_CD=NA,Cset_CN=NA,Pset_PN="R-RTFT*",Value=NA)
+  
+   # ELC processes ----
   
   elc_techs_af <- data.frame(c(windOnshore,newWindOffshore,
                                solar,wave,tidal)) %>%
@@ -57,7 +80,7 @@ create_main_dict <- function(mopath){
       Serie=ifelse(Pset_PN %in% c(tidal),"tidal",Serie),
       Attribute="NCAP_AF",Year=defaultYear,
       TS_Level="DayNite",Target_Sheet="PWR_AF",Transformation="mult_avg",
-      Cset_set=NA,Cset_CD=NA)
+      Cset_set=NA,Cset_CD=NA,Cset_CN=NA)
   
   # Transport ----
   
@@ -75,7 +98,7 @@ create_main_dict <- function(mopath){
                    "transport_average2",Serie),
       Attribute="COM_FR",Year=defaultYear,
       TS_Level="DayNite",Target_Sheet="TRA_DEM",Transformation="none_shr",
-      Cset_set="DEM",Cset_CD="Transport Demand*",Pset_PN=NA,Value=NA)
+      Cset_set="DEM",Cset_CD="Transport Demand*",Pset_PN=NA,Value=NA,Cset_CN=NA)
   
   # vt_elc_techs <- read_V_FT(mopath,"ELC","TechsR",2,fill_columns = 1:2) %>%
   #   select(TechName,TechDesc,Region,`Comm-IN`) %>%
@@ -126,6 +149,9 @@ create_main_dict <- function(mopath){
   
 # Create main dictionary ----
   main_dict <- rbind(
+    rsd_sol_com_fr,
+    rsd_sh_com_fr,
+    rsd_rtft_af,
     elc_techs_af,
     tra_dem
     )

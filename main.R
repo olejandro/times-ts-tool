@@ -29,7 +29,7 @@ source("transform.R")
 mopath <- "../../"
 subres <- paste(mopath, "SubRES_TMPL/", sep="")
 supxls <- paste(mopath, "SuppXLS/", sep="")
-subannual <- paste(checkModelPath(supxls), "Scen_SubAnnual_Data.xlsx", sep="")
+subannual <- paste(checkModelPath(supxls), "Scen_SYS_SubAnnual_Data.xlsx", sep="")
 syssettings <- paste(mopath, "SysSettings.xlsx", sep="")
 
 # User choices ----

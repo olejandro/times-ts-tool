@@ -39,6 +39,9 @@ fetch_timeseries <- function() {
   
   # Xiufeng data
   xiufeng_data <- "input/timeseries/Xiufeng/xiufeng-series.csv"
+  
+  # Other: industry profiles, solar heating and resedential heating availability
+  Other_data <- "input/timeseries/other.csv"
 
   # # Fetch PLEXOS ENTSO-E data ----
   # entsoe_solar <- read.csv(entsoe_solar_data, header = TRUE)
@@ -186,12 +189,31 @@ fetch_timeseries <- function() {
   
   from_xiufeng <- read.csv(xiufeng_data,header=TRUE, sep=",",stringsAsFactors=FALSE)
   
+  # Fetch other data ----
+  # Load Other data
+  from_Other <- read.csv(Other_data, header = TRUE)
+  
+  # Calculate heat savings profile ----
+  
+  hw_demand <- min(from_Other$Heat_demand)
+  annual_hw_demand <- hw_demand * nrow(from_Other)
+  annual_heat_demand <- sum(from_Other$Heat_demand)
+  
+  heat_savings <- as.data.frame(from_Other$Heat_demand) %>%
+    rename(Heat_Savings="from_Other$Heat_demand") %>%
+    mutate(Heat_Savings=(Heat_Savings-hw_demand)/(annual_heat_demand-annual_hw_demand))
+  
+  space_heating <- as.data.frame(from_Other$Heat_demand) %>%
+    rename(Space_Heating="from_Other$Heat_demand") %>%
+    mutate(Space_Heating=(Space_Heating-hw_demand))
   
   # Combine all the data ----
   timeseries <-cbind(
     #from_ninja,
     transport,
-    from_xiufeng
+    from_xiufeng,
+    space_heating,
+    heat_savings
     # from_entsoe
     )
   
