@@ -1,4 +1,5 @@
 # Copyright 2019 Energy Modelling Lab ApS
+# Copyright 2020 Olexandr Balyk
 # 
 # This file is part of TIMES-TS-Tool.
 # 
