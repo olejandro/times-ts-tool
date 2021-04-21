@@ -38,8 +38,11 @@ fetch_timeseries <- function() {
   # Transport data
   transport_data <- "input/misc/transport.xlsx"
   
-  # Xiufeng data
-  xiufeng_data <- "input/timeseries/Xiufeng/xiufeng-series.csv"
+  # Chimera data
+  chimera_data <- "input/timeseries/chimera/chimera-series.csv"
+  
+  # Data Centre data
+  dcs_data <- "input/timeseries/dcs.csv"
   
   # Other: industry profiles, solar heating and resedential heating availability
   Other_data <- "input/timeseries/other.csv"
@@ -186,9 +189,12 @@ fetch_timeseries <- function() {
                                             transport_series["Other urban areas"])/3)/2
   
 
-  # Fetch Xiufeng data ----
+  # Fetch Chimera data ----
   
-  from_xiufeng <- read.csv(xiufeng_data,header=TRUE, sep=",",stringsAsFactors=FALSE)
+  from_chimera <- read.csv(chimera_data,header=TRUE, sep=",",stringsAsFactors=FALSE)
+  
+  # Fetch data centre data ----
+  from_dcs <- read.csv(dcs_data, header = TRUE)
   
   # Fetch other data ----
   # Load Other data
@@ -212,7 +218,9 @@ fetch_timeseries <- function() {
   timeseries <-cbind(
     #from_ninja,
     transport,
-    from_xiufeng,
+    from_chimera,
+    from_dcs,
+    from_Other,
     space_heating,
     heat_savings
     # from_entsoe

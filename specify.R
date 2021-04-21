@@ -32,40 +32,65 @@ create_main_dict <- function(mopath){
   
   windOnshore <- c("P-RNW-WIN-ON*")
   newWindOffshore <- c("P-RNW-WIN-OF*")
-  solar <- c("P-RNW-SOL-*", "COMPVELC*")
+  solar <- c("P-RNW-SOL-*")
   tidal  <- c("P-RNW*TID*")
   wave <- c("P-RNW*WAV*")
   
-  regions_names <- c("IE","National","IE-CW","IE-D","IE-KE","IE-KK","IE-LS","IE-LD","IE-LH",
-               "IE-MH","IE-OY","IE-WH","IE-WX","IE-WW","IE-CE","IE-CO","IE-KY",
-               "IE-LK","IE-TA","IE-WD","IE-G","IE-LM","IE-MO","IE-RN","IE-SO",
-               "IE-CN","IE-DL","IE-MN")
+  regions_names <- c("IE","National","IE-CW","IE-D","IE-KE","IE-KK","IE-LS",
+                     "IE-LD","IE-LH","IE-MH","IE-OY","IE-WH","IE-WX","IE-WW",
+                     "IE-CE","IE-CO","IE-KY","IE-LK","IE-TA","IE-WD","IE-G",
+                     "IE-LM","IE-MO","IE-RN","IE-SO","IE-CN","IE-DL","IE-MN")
+  
+  # SRV ----
+  #dcs demand variation
+  srv_dcs_dem <- expand.grid(Pset_PN=NA, Cset_CN="SRVDCE-CS",
+                             Region=c("IE","National"), Year=defaultYear,
+                             Attribute="COM_FR", Transformation="none_shr",
+                             Value = NA, TS_Level="DayNite", Other_Indexes=NA,
+                             Cset_set=NA, Cset_CD=NA, Target_Sheet="DCs",
+                             Serie="temp_2018_dublin_demand")
+  
+  #dcs eh profile
+  srv_dcs_eh  <- expand.grid(Pset_PN="S-DCE-CS", Other_Indexes="SRVHET-DC-LT",
+                             Region=c("IE","National"), Attribute="VDA_FLOP",
+                             Value=NA, Transformation="none_avg",
+                             TS_Level="DayNite", Target_Sheet="DCs", Cset_set=NA,
+                             Cset_CD=NA, Year=defaultYear, Cset_CN=NA,
+                             Serie="temp_2018_dublin_excess_heat")
+  
+  #dcs electricity for cooling
+  srv_dcs_ec <- expand.grid(Pset_PN="S-DCE-CS", Other_Indexes="SRVELC-DC-C",
+                            Region=c("IE","National"), Attribute="VDA_FLOP",
+                            Value=NA, Transformation="none_avg",
+                            TS_Level="DayNite", Target_Sheet="DCs", Cset_set=NA,
+                            Cset_CD=NA, Year=defaultYear, Cset_CN=NA,
+                            Serie = "temp_2018_dublin_cooling")
   
   
-   # RSD ----
+  # RSD ----
   
   rsd_sol_com_fr <- data.frame(c("IE","National")) %>%
     rename(Region=1) %>%
     mutate(Serie="solar",
-           Attribute="COM_FR",Year=defaultYear,
+           Attribute="COM_FR",Year=defaultYear, Other_Indexes=NA,
            TS_Level="DayNite",Target_Sheet="RSDSOL",Transformation="none_shr",
            Cset_set=NA,Cset_CD=NA,Cset_CN="RSDSOL",Pset_PN=NA,Value=NA)
   
   rsd_sh_com_fr <- data.frame(c("IE","National")) %>%
     rename(Region=1) %>%
     mutate(Serie="Space_Heating",
-           Attribute="COM_FR",Year=defaultYear,
+           Attribute="COM_FR",Year=defaultYear, Other_Indexes=NA,
            TS_Level="DayNite",Target_Sheet="RSD_SH",Transformation="none_shr",
            Cset_set=NA,Cset_CD=NA,Cset_CN="RSDSH*",Pset_PN=NA,Value=NA)
   
   rsd_rtft_af <- data.frame(c("IE","National")) %>%
     rename(Region=1) %>%
     mutate(Serie="Heat_Savings",
-           Attribute="NCAP_AF",Year=defaultYear,
+           Attribute="NCAP_AF",Year=defaultYear, Other_Indexes=NA,
            TS_Level="DayNite",Target_Sheet="RSD_RTFT",Transformation="none_sbd",
            Cset_set=NA,Cset_CD=NA,Cset_CN=NA,Pset_PN="R-RTFT*",Value=NA)
   
-   # ELC processes ----
+  # ELC processes ----
   
   elc_techs_af <- data.frame(c(windOnshore,newWindOffshore,
                                solar,wave,tidal)) %>%
@@ -79,7 +104,7 @@ create_main_dict <- function(mopath){
       Serie=ifelse(Pset_PN %in% c(solar),"solar",Serie),
       Serie=ifelse(Pset_PN %in% c(wave),"wave",Serie),
       Serie=ifelse(Pset_PN %in% c(tidal),"tidal",Serie),
-      Attribute="NCAP_AF",Year=defaultYear,
+      Attribute="NCAP_AF",Year=defaultYear, Other_Indexes=NA,
       TS_Level="DayNite",Target_Sheet="PWR_AF",Transformation="mult_avg",
       Cset_set=NA,Cset_CD=NA,Cset_CN=NA)
   
@@ -97,7 +122,7 @@ create_main_dict <- function(mopath){
                    "transport_average1",Serie),
       Serie=ifelse(Region %in% c("IE-CO","IE-LK","IE-WD","IE-G"),
                    "transport_average2",Serie),
-      Attribute="COM_FR",Year=defaultYear,
+      Attribute="COM_FR",Year=defaultYear, Other_Indexes=NA,
       TS_Level="DayNite",Target_Sheet="TRA_DEM",Transformation="none_shr",
       Cset_set="DEM",Cset_CD="Transport Demand*",Pset_PN=NA,Value=NA,Cset_CN=NA)
   
@@ -154,7 +179,10 @@ create_main_dict <- function(mopath){
     rsd_sh_com_fr,
     rsd_rtft_af,
     elc_techs_af,
-    tra_dem
+    tra_dem,
+    srv_dcs_dem,
+    srv_dcs_eh,
+    srv_dcs_ec
     )
   
   return(main_dict)
