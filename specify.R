@@ -1,4 +1,3 @@
-# Copyright 2019 Energy Modelling Lab ApS
 # Copyright 2020, 2021 Olexandr Balyk
 # 
 # This file is part of TIMES-TS-Tool.
@@ -36,66 +35,73 @@ create_main_dict <- function(mopath){
   tidal  <- c("P-RNW*TID*")
   wave <- c("P-RNW*WAV*")
   
-  regions_names <- c("IE","National","IE-CW","IE-D","IE-KE","IE-KK","IE-LS",
-                     "IE-LD","IE-LH","IE-MH","IE-OY","IE-WH","IE-WX","IE-WW",
-                     "IE-CE","IE-CO","IE-KY","IE-LK","IE-TA","IE-WD","IE-G",
-                     "IE-LM","IE-MO","IE-RN","IE-SO","IE-CN","IE-DL","IE-MN")
+  single_region <- "IE"
+  county_polyfill <- "National"
+  county_regions <- c("IE-CW","IE-D","IE-KE","IE-KK","IE-LS",
+                      "IE-LD","IE-LH","IE-MH","IE-OY","IE-WH","IE-WX","IE-WW",
+                      "IE-CE","IE-CO","IE-KY","IE-LK","IE-TA","IE-WD","IE-G",
+                      "IE-LM","IE-MO","IE-RN","IE-SO","IE-CN","IE-DL","IE-MN")
   
-  # SRV ----
-  #dcs demand variation
+  # Services ----
+  ## Data Centres ----
+  ### Data Centres demand variation ----
   srv_dcs_dem <- expand.grid(Pset_PN=NA, Cset_CN="SRVDCE-CS",
-                             Region=c("IE","National"), Year=defaultYear,
-                             Attribute="COM_FR", Transformation="none_shr",
-                             Value = NA, TS_Level="DayNite", Other_Indexes=NA,
+                             Region=c(single_region,county_polyfill),
+                             Year=defaultYear, Attribute="COM_FR",
+                             Transformation="none_shr", Value = NA, 
+                             TS_Level="DayNite", Other_Indexes=NA,
                              Cset_set=NA, Cset_CD=NA, Target_Sheet="DCs",
                              Serie="temp_2018_dublin_demand")
   
-  #dcs eh profile
+  ### Data Centres excess heat profile ----
   srv_dcs_eh  <- expand.grid(Pset_PN="S-DCE-CS", Other_Indexes="SRVHET-DC-LT",
-                             Region=c("IE","National"), Attribute="VDA_FLOP",
-                             Value=NA, Transformation="none_avg",
-                             TS_Level="DayNite", Target_Sheet="DCs", Cset_set=NA,
-                             Cset_CD=NA, Year=defaultYear, Cset_CN=NA,
+                             Region=c(single_region,county_polyfill),
+                             Attribute="VDA_FLOP", Value=NA,
+                             Transformation="none_avg", TS_Level="DayNite",
+                             Target_Sheet="DCs", Cset_set=NA, Cset_CD=NA,
+                             Year=defaultYear, Cset_CN=NA,
                              Serie="temp_2018_dublin_excess_heat")
   
-  #dcs electricity for cooling
+  ### Data centres electricity for cooling profile ----
   srv_dcs_ec <- expand.grid(Pset_PN="S-DCE-CS", Other_Indexes="SRVELC-DC-C",
-                            Region=c("IE","National"), Attribute="VDA_FLOP",
-                            Value=NA, Transformation="none_avg",
-                            TS_Level="DayNite", Target_Sheet="DCs", Cset_set=NA,
-                            Cset_CD=NA, Year=defaultYear, Cset_CN=NA,
+                            Region=c(single_region,county_polyfill),
+                            Attribute="VDA_FLOP", Value=NA,
+                            Transformation="none_avg", TS_Level="DayNite",
+                            Target_Sheet="DCs", Cset_set=NA, Cset_CD=NA,
+                            Year=defaultYear, Cset_CN=NA,
                             Serie = "temp_2018_dublin_cooling")
   
-  
-  # RSD ----
-  
-  rsd_sol_com_fr <- data.frame(c("IE","National")) %>%
+  # Residential ----
+  ## Solar profile ----
+  rsd_sol_com_fr <- data.frame(c(single_region,county_polyfill)) %>%
     rename(Region=1) %>%
     mutate(Serie="solar",
            Attribute="COM_FR",Year=defaultYear, Other_Indexes=NA,
            TS_Level="DayNite",Target_Sheet="RSDSOL",Transformation="none_shr",
            Cset_set=NA,Cset_CD=NA,Cset_CN="RSDSOL",Pset_PN=NA,Value=NA)
   
-  rsd_sh_com_fr <- data.frame(c("IE","National")) %>%
+  ## Space heating demand profile ----
+  rsd_sh_com_fr <- data.frame(c(single_region,county_polyfill)) %>%
     rename(Region=1) %>%
     mutate(Serie="Space_Heating",
            Attribute="COM_FR",Year=defaultYear, Other_Indexes=NA,
            TS_Level="DayNite",Target_Sheet="RSD_SH",Transformation="none_shr",
            Cset_set=NA,Cset_CD=NA,Cset_CN="RSDSH*",Pset_PN=NA,Value=NA)
   
-  rsd_rtft_af <- data.frame(c("IE","National")) %>%
+  ## Retrofit energy savings profile ----
+  rsd_rtft_af <- data.frame(c(single_region,county_polyfill)) %>%
     rename(Region=1) %>%
     mutate(Serie="Heat_Savings",
            Attribute="NCAP_AF",Year=defaultYear, Other_Indexes=NA,
            TS_Level="DayNite",Target_Sheet="RSD_RTFT",Transformation="none_sbd",
            Cset_set=NA,Cset_CD=NA,Cset_CN=NA,Pset_PN="R-RTFT*",Value=NA)
   
-  # ELC processes ----
-  
-  elc_techs_af <- data.frame(c(windOnshore,newWindOffshore,
+  # Power sector ----
+  ## Wind, solar, wave and tidal profiles ----
+  pwr_techs_af <- data.frame(c(windOnshore,newWindOffshore,
                                solar,wave,tidal)) %>%
     rename(Pset_PN=1) %>%
-    merge(data.frame(c("IE","National"))) %>%
+    merge(data.frame(c(single_region,county_polyfill))) %>%
     rename(Region=2) %>%
     mutate(
       Value=1,
@@ -109,8 +115,8 @@ create_main_dict <- function(mopath){
       Cset_set=NA,Cset_CD=NA,Cset_CN=NA)
   
   # Transport ----
-  
-  tra_dem <- data.frame(regions_names) %>%
+  ## Transport demand profile ----
+  tra_dem <- data.frame(c(single_region,county_regions)) %>%
     rename(Region=1) %>%
     mutate(
       Serie=ifelse(Region %in% c("IE"),"transport_national",NA),
@@ -126,59 +132,12 @@ create_main_dict <- function(mopath){
       TS_Level="DayNite",Target_Sheet="TRA_DEM",Transformation="none_shr",
       Cset_set="DEM",Cset_CD="Transport Demand*",Pset_PN=NA,Value=NA,Cset_CN=NA)
   
-  # vt_elc_techs <- read_V_FT(mopath,"ELC","TechsR",2,fill_columns = 1:2) %>%
-  #   select(TechName,TechDesc,Region,`Comm-IN`) %>%
-  #   distinct() %>%
-  #   filter(grepl("ELCWIN|ELCWAV|ELCSOL",`Comm-IN`)) %>%
-  #   select(TechName,TechDesc,Region) %>%
-  #   merge(read.csv("input/afa_data_vt.csv",colClasses=c(rep("character",3),"numeric","character"))) %>%
-  #   select(-type) %>%
-  #   rename(Value=AFA)
-  # 
-  # sr_elc_techs <- rbind(read_V_FT(subres,"ELC_Techs.x","ELC_TechsR_ELC",2,fill_columns = 1:2),
-  #                       read_V_FT(subres,"ELC_Techs.x","ELC_TechsR_DHC",2,fill_columns = 1:2),
-  #                       read_V_FT(subres,"ELC_Techs.x","ELC_TechsR_DHD",2,fill_columns = 1:2)) %>%
-  #   select(TechName,`*TechDesc`,YEAR,`*availability.pct`) %>%
-  #   rename(TechDesc="*TechDesc",Value="*availability.pct") %>%
-  #   filter(grepl("Wind|Solar|Wave", TechDesc)) %>%
-  #   merge(data.frame(c("DKE","DKW"))) %>%
-  #   rename(Region=5)
-  # 
-  # elc_techs_af <- rbind(vt_elc_techs,sr_elc_techs) %>%
-  #   mutate(Commodity=NA,Attribute="NCAP_AF",LimType="UP",Transformation="scale_afa",CURR=NA,
-  #          Target_Sheet=ifelse(grepl("Heat",TechDesc,ignore.case=TRUE),"ELC_SolarHeating",NA),
-  #          Target_Sheet=ifelse(grepl("Onshore|Domestic",TechDesc,ignore.case=TRUE),"ELC_Onshore",Target_Sheet),
-  #          Target_Sheet=ifelse(grepl("Offshore|Near",TechDesc,ignore.case=TRUE),"ELC_Offshore",Target_Sheet),
-  #          Target_Sheet=ifelse(grepl("Photovoltaics",TechDesc,ignore.case=TRUE),"ELC_PV",Target_Sheet),
-  #          TS_Level=ifelse(grepl("Heat",TechDesc,ignore.case=TRUE),"Season","DayNite"),
-  #          Serie=ifelse(grepl("Heat",TechDesc,ignore.case=TRUE),"PV",NA),
-  #          Serie=ifelse((grepl("Onshore|Domestic",TechDesc,ignore.case=TRUE)
-  #                        & grepl("DKE",Region)),"WindOnshore_DKE",Serie),
-  #          Serie=ifelse((grepl("Onshore|Domestic",TechDesc,ignore.case=TRUE)
-  #                        & grepl("DKW",Region)),"WindOnshore_DKW",Serie),
-  #          Serie=ifelse((grepl("Offshore|Near",TechDesc,ignore.case=TRUE)
-  #                        & grepl("DKE",Region)),"WindOffshore_DKE",Serie),
-  #          Serie=ifelse((grepl("Offshore|Near",TechDesc,ignore.case=TRUE)
-  #                        & grepl("DKW",Region)),"WindOffshore_DKW",Serie),
-  #          Serie=ifelse(grepl("Photovoltaics",TechDesc,ignore.case=TRUE),"PV",Serie)) %>%
-  #   rename(Process=TechName,Description=TechDesc)
-  # 
-  # 
-  # hou_dems <- rbind(ht_hou_dems,ap_hou_dems) %>%  
-  #   merge(data.frame(c("DKE","DKW"))) %>%
-  #   rename(Region=3) %>%
-  #   mutate(Process=NA,YEAR=2010,Attribute="COM_FR",LimType=NA,Value=NA,CURR=NA,
-  #          Transformation="none_shr",Target_Sheet="HOU_Demands",TS_Level="DayNite",
-  #          Serie=ifelse(grepl("RAD|RAM",CommName,ignore.case=TRUE),"Appliances",NA),
-  #          Serie=ifelse(grepl("RHAREA",CommName,ignore.case=TRUE),"Heat_demand",Serie)) %>%
-  #   rename(Commodity=CommName,Description=CommDesc)
-  
 # Create main dictionary ----
   main_dict <- rbind(
     rsd_sol_com_fr,
     rsd_sh_com_fr,
     rsd_rtft_af,
-    elc_techs_af,
+    pwr_techs_af,
     tra_dem,
     srv_dcs_dem,
     srv_dcs_eh,
