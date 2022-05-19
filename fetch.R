@@ -1,5 +1,6 @@
 # Copyright 2019 Energy Modelling Lab ApS
-# Copyright 2020, 2021 Olexandr Balyk
+# Copyright 2020 Olexandr Balyk
+# Copyright 2021 University College Cork
 # 
 # This file is part of TIMES-TS-Tool.
 # 
