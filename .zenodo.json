@@ -1,0 +1,15 @@
+{
+    "creators": [
+        {
+            "orcid": "0000-0003-2388-7057",
+            "affiliation": "University College Cork",
+            "name": "Balyk, Olexandr"
+        }
+    ],
+
+    "license": "GPL-3.0",
+
+    "title": "Timeslice Tool for TIMES models",
+
+    "keywords": ["Time series", "Aggregation", "TIMES"]
+}
