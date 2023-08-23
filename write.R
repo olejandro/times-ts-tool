@@ -23,7 +23,11 @@ library(dplyr)
 write_TFM <- function(aTable,wb,sheet,type='INS',position=c(2, 1),fresh_sheet=FALSE,
                       no_empty_cols=TRUE, pretty_table=TRUE) {
   # Table tag
-  tag <- paste("~TFM",type,sep="_")
+  if(type %in% c("INS","DINS","UPD","MIG")){
+    tag <- paste("~TFM",type,sep="_")
+  }else{
+    tag <- paste("~",type,sep="")
+  }
   # Table tag position
   tagposition <- position
   # Position of the table => right below the tag
@@ -81,14 +85,27 @@ prettify_table <- function(aTable,table_type){
   return(aTable[col_names])
 }
 
-update_syssettings <- function(syssettings,ts_cats,Season,Weekly,DayNite){
+update_ts_defs <- function(file_path,ts_cats,season_map,weekly_map,daynite_map,
+                           start_fresh=TRUE,ts_def_sheet='TS_Definition'){
 
-  ts_def_sheet <- "Region-Time Slices"
   ts_def_cols <- c(5,6,7)
+  tables_row <- 4
   
-  # Read the existing ts definition table in syssettings
-  xl_ts_def <- read.xlsx(syssettings, sheet = ts_def_sheet, startRow = 4,
-                         colNames = TRUE, cols = ts_def_cols, skipEmptyRows = FALSE)
+  # Read the existing ts definition table in the file
+  if (file.exists(file_path) & !start_fresh){
+    wb <- loadWorkbook(file_path)
+    if (ts_def_sheet %in% names(wb))
+    {
+      xl_ts_def <- read.xlsx(file_path, sheet = ts_def_sheet, startRow = tables_row,
+                             colNames = TRUE, cols = ts_def_cols, skipEmptyRows = FALSE)
+    } else {
+      xl_ts_def <- NULL
+    }
+   
+  } else {
+    xl_ts_def <- NULL
+  }
+  
   
   # Determine the maximum number of unique ts levels in ts_cats
   max_unique_rows = 0
@@ -101,31 +118,60 @@ update_syssettings <- function(syssettings,ts_cats,Season,Weekly,DayNite){
     }
   }
   
-  # Determine the size of the table to be printed in syssettings
-  if (max_unique_rows < nrow(xl_ts_def)) {
+  # Determine the size of the table to be printed in the file
+  
+  if (!is.null(xl_ts_def)){
+    original_nrows <- nrow(xl_ts_def)
+  } else {
+    original_nrows <- 0
+  }
+  
+  if (max_unique_rows < original_nrows) {
     ts_def2xl_size <- nrow(xl_ts_def)
   } else {
     ts_def2xl_size <- max_unique_rows
   }
   
-  # Load syssettings workbook
-  wb <- loadWorkbook(syssettings)
+  # Load the workbook
+  if (file.exists(file_path) & !start_fresh){
+    wb <- loadWorkbook(file_path)
+    existing_tables <- getTables(wb, sheet = ts_def_sheet)
+  } else {
+    existing_tables <- NULL
+    wb <- createWorkbook()
+  }
+  
+  if (!(ts_def_sheet %in% names(wb))){
+    ts_levels <- c("Season", "Weekly", "DayNite")
+    Season <- unique(ts_cats[,"Season"])
+    Weekly <- unique(ts_cats[,"Day"])
+    DayNite <- unique(ts_cats[,"Hour"])
+    nrows <- max(c(length(Season),length(Weekly),length(DayNite)))
+    ts_defs <- data.frame(matrix(nrow=nrows,ncol=length(ts_levels)))
+    colnames(ts_defs) <- ts_levels
+    ts_defs[1:length(Season),"Season"] <- Season
+    ts_defs[1:length(Weekly),"Weekly"] <- Weekly
+    ts_defs[1:length(DayNite),"DayNite"] <- DayNite
+    
+    write_TFM(ts_defs,wb,ts_def_sheet,type="TimeSlices",
+              position=c(ts_def_cols[1],tables_row-1),no_empty_cols=FALSE)
+  } else {
   
   # Print ts levels
-  for (i in 1:length(ts_def_cols)) {
-    v <- character(ts_def2xl_size)
-    v[1:ts_def2xl_size] <- NA
-    ts_levels <- unique(ts_cats[,i])
-    v[1:length(ts_levels)] <- ts_levels
-    writeData(wb, ts_def_sheet, v, 
-              startCol = ts_def_cols[i], 
-              startRow = 5
-    )
+    for (i in 1:length(ts_def_cols)) {
+      v <- character(ts_def2xl_size)
+      v[1:ts_def2xl_size] <- NA
+      ts_levels <- unique(ts_cats[,i])
+      v[1:length(ts_levels)] <- ts_levels
+      writeData(wb, ts_def_sheet, v, 
+                startCol = ts_def_cols[i], 
+                startRow = tables_row + 1
+      )
+    }
   }
   
   #Print information about timeslices
   info_tables <- c("season_info", "weekly_info", "daynite_info")
-  existing_tables <- getTables(wb, sheet = ts_def_sheet)
   tables2delete <- existing_tables #[existing_tables %in% info_tables]
   
   if (length(tables2delete)>0) {
@@ -134,17 +180,17 @@ update_syssettings <- function(syssettings,ts_cats,Season,Weekly,DayNite){
     }
   }
   
-  writeDataTable(wb, ts_def_sheet, Season, startCol = 11, startRow = 4,
-                 tableStyle = "TableStyleLight9", tableName = "season_info",
+  writeDataTable(wb,ts_def_sheet,season_map,startCol = 11,startRow = tables_row,
+                 tableStyle = "TableStyleLight9",tableName = "season_info",
                  withFilter = FALSE)
-  writeDataTable(wb, ts_def_sheet, Weekly, startCol = 14, startRow = 4,
-                 tableStyle = "TableStyleLight9", tableName = "weekly_info",
+  writeDataTable(wb,ts_def_sheet,weekly_map,startCol = 14,startRow = tables_row,
+                 tableStyle = "TableStyleLight9",tableName = "weekly_info",
                  withFilter = FALSE)
-  writeDataTable(wb, ts_def_sheet, DayNite, startCol = 17, startRow = 4,
-                 tableStyle = "TableStyleLight9", tableName = "daynite_info",
+  writeDataTable(wb,ts_def_sheet,daynite_map,startCol = 17,startRow = tables_row,
+                 tableStyle = "TableStyleLight9",tableName = "daynite_info",
                  withFilter = FALSE)
   
   # Save modified workbook
-  saveWorkbook(wb, syssettings, overwrite = TRUE)
+  saveWorkbook(wb, file_path, overwrite = TRUE)
   
 }

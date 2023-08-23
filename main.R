@@ -28,10 +28,10 @@ source("specify.R")
 source("transform.R")
 
 # File locations ---- 
-mopath <- "../../"
+mopath <- ""
 subres <- paste(mopath, "SubRES_TMPL/", sep="")
 supxls <- paste(mopath, "SuppXLS/", sep="")
-subannual <- paste(checkModelPath(supxls), "Scen_SYS_SubAnnual_Data.xlsx", sep="")
+subannual <- paste(checkModelPath(supxls), "Scen_SYS_SubAnnual_TS8760.xlsx", sep="")
 syssettings <- paste(mopath, "SysSettings.xlsx", sep="")
 
 # User choices ----
@@ -41,7 +41,7 @@ year <- 2018
 ts_data <- fetch_timeseries()
 
 # Categorise all the hours in a year
-ts_cats <- categorise_ts(year,syssettings=syssettings)
+ts_cats <- categorise_ts(year,ts_defs=subannual)
 
 # Map hours to DayNite, Weekly, and Season time slices
 ts_map <- as.data.frame(map_ts(ts_cats))
@@ -54,8 +54,12 @@ rules <- create_main_dict(mopath)
 
 ### Transform and write ----
 
-# Create a workbook
-wb <- createWorkbook()
+# Load / Create a workbook
+if (file.exists(subannual)){
+  wb <- loadWorkbook(subannual)
+} else {
+  wb <- createWorkbook()
+}
 
 # Add a sheet with timeslice duration
 write_TFM(ts_yrfr_data(ts_map[,"DayNite"],unique(rules$Region)), wb, sheet="TimeSlices",
@@ -86,7 +90,14 @@ for (aTarget_Sheet in unique(rules$Target_Sheet))
                                                     rules$Transformation==aTransformation &
                                                     rules$Serie==aSerie),],
                                       -Target_Sheet,-TS_Level,-Transformation,-Serie)
-              transformed_data <- transform_data(current_data,aTransformation,ts_data[aSerie],ts_map[aTS_Level])
+              if (aSerie %in% names(ts_data)){
+                transformed_data <- transform_data(current_data,aTransformation,ts_data[aSerie],ts_map[aTS_Level])
+              }
+              else
+              {
+                print(paste(aSerie, "not defined. Skipping..."))
+                transformed_data <- NULL
+              }
               if (!is.null(get0("aDataSet")))
                 {
                 aDataSet <- rbind(aDataSet,transformed_data)
@@ -104,11 +115,11 @@ for (aTarget_Sheet in unique(rules$Target_Sheet))
     if (!is.null(get0("aDataSet")))
     {
       # Do rounding
-      aDataSet$TS_Value <- round(aDataSet$TS_Value,5)
-      # Move Regions to columns for unique rows (duplicates are dicarded)
+      # aDataSet$TS_Value <- round(aDataSet$TS_Value,5)
+      # Move Regions to columns for unique rows (duplicates are discarded)
       pDataSet <- pivot_wider(unique(aDataSet),names_from=Region,values_from=TS_Value)
       # Write data to a sheet
-      write_TFM(pDataSet,wb,aTarget_Sheet,fresh_sheet=TRUE)
+      write_TFM(pDataSet,wb,aTarget_Sheet,type="INS",fresh_sheet=TRUE)
       print(paste("Created", aTarget_Sheet, sep = " "))
       # Empty aDataSet
       aDataSet <- NULL

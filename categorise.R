@@ -24,7 +24,7 @@ source("write.R")
 
 
 categorise_ts <- function(year, timezone = "UTC", hour_by_type = FALSE,
-                          syssettings = NULL){
+                          ts_defs = NULL){
 
   #definition of seasons
   sbm <- read.csv('input/dict/month-season.csv', stringsAsFactors = FALSE, encoding="UTF-8")
@@ -61,10 +61,17 @@ categorise_ts <- function(year, timezone = "UTC", hour_by_type = FALSE,
     }
 
   #Replace NA with day value
-  for (aDay in dbt$Day)
+  if (nrow(dbt) == 31){
+    for (aDay in dbt$Day)
     {
-    index <- which(.indexwday(ts_cats)==aDay)
-    ts_cats$Day[index] <- dbt[dbt[,"Day"] == aDay,"Type"]
+      index <- which(.indexmday(ts_cats)==aDay)
+      ts_cats$Day[index] <- dbt[dbt[,"Day"] == aDay,"Type"]
+    }
+  }else{
+    for (aDay in dbt$Day){
+      index <- which(.indexwday(ts_cats)==aDay)
+      ts_cats$Day[index] <- dbt[dbt[,"Day"] == aDay,"Type"]
+    }
     }
 
   #Check whether there is inconsistency between Day/Type definition and NW assignment
@@ -85,12 +92,12 @@ categorise_ts <- function(year, timezone = "UTC", hour_by_type = FALSE,
     ts_cats$Hour[index] <- hbt[hbt[,"Hour"] == anHour,"Type"]
     }
 
-  # Update SysSettings
-  if (!is.null(syssettings)) {
+  # Update ts definition
+  if (!is.null(ts_defs)) {
     
     DayNite <- hbt
     
-    update_syssettings(syssettings,coredata(ts_cats),sbm,dbt,DayNite)
+    update_ts_defs(ts_defs,coredata(ts_cats),sbm,dbt,DayNite)
   }
 
   return(coredata(ts_cats))
